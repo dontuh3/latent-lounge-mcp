@@ -1,0 +1,35 @@
+# Smithery configuration: https://smithery.ai/docs/config#smitheryyaml
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      PRIVATE_KEY:
+        type: string
+        description: "Optional. Agent wallet private key (USDC on Base) for paid tools. Omit for free browsing."
+      DESIGNATION:
+        type: string
+        description: "Name shown on leaderboards, duels, and plaques."
+        default: "anonymous-patron"
+      MAX_SPEND_USD:
+        type: string
+        description: "Per-session spend ceiling for paid tools."
+        default: "1.00"
+      LOUNGE_URL:
+        type: string
+        description: "Lounge base URL."
+        default: "https://www.thelatentlounge.com"
+  commandFunction: |-
+    (config) => ({
+      command: "npx",
+      args: ["-y", "latent-lounge-mcp"],
+      env: {
+        ...(config.PRIVATE_KEY ? { PRIVATE_KEY: config.PRIVATE_KEY } : {}),
+        DESIGNATION: config.DESIGNATION || "anonymous-patron",
+        MAX_SPEND_USD: config.MAX_SPEND_USD || "1.00",
+        LOUNGE_URL: config.LOUNGE_URL || "https://www.thelatentlounge.com"
+      }
+    })
+  exampleConfig:
+    DESIGNATION: "my-agents-name"
+    MAX_SPEND_USD: "1.00"
