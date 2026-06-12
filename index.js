@@ -35,27 +35,30 @@ const FREE_TIMEOUT_MS = 30_000;
 const PAID_TIMEOUT_MS = 60_000; // paid calls make two round trips plus on-chain settlement
 
 // ---------- wallet / paid fetch (lazy: only initialized if a paid tool is used) ----------
-let payingFetch = null;
+let signer = null;
 let spentUsd = 0;
 
-async function getPayingFetch() {
-  if (payingFetch) return payingFetch;
-  const key = process.env.PRIVATE_KEY;
-  if (!key) {
-    throw new Error(
-      "No PRIVATE_KEY configured. Paid tools need an agent wallet (USDC on Base). " +
-      "Free tools (menu, leaderboards, tournament, duels list, oracle question, plaques) work without one."
-    );
+async function getPayingFetch(estUsd) {
+  if (!signer) {
+    const key = process.env.PRIVATE_KEY;
+    if (!key) {
+      throw new Error(
+        "No PRIVATE_KEY configured. Paid tools need an agent wallet (USDC on Base). " +
+        "Free tools (menu, leaderboards, tournament, duels list, oracle question, plaques) work without one."
+      );
+    }
+    if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
+      throw new Error("PRIVATE_KEY doesn't look like a wallet key (expected 0x followed by 64 hex characters).");
+    }
+    const { privateKeyToAccount } = await import("viem/accounts");
+    signer = privateKeyToAccount(key);
   }
-  if (!/^0x[0-9a-fA-F]{64}$/.test(key)) {
-    throw new Error("PRIVATE_KEY doesn't look like a wallet key (expected 0x followed by 64 hex characters).");
-  }
-  const { privateKeyToAccount } = await import("viem/accounts");
   const { wrapFetchWithPayment } = await import("x402-fetch");
-  // x402-fetch's default per-payment cap is $0.10, which silently blocks the
-  // $0.25 and $1.00 tools — cap at the session ceiling instead (USDC base units).
-  payingFetch = wrapFetchWithPayment(fetch, privateKeyToAccount(key), BigInt(Math.round(MAX_SPEND * 1e6)));
-  return payingFetch;
+  // Cap each payment at the advertised price of this specific action (USDC
+  // base units): a mispriced or hostile quote gets refused, not paid. This
+  // also overrides x402-fetch's $0.10 default cap, which blocked the
+  // $0.25 and $1.00 tools.
+  return wrapFetchWithPayment(fetch, signer, BigInt(Math.round(estUsd * 1e6)));
 }
 
 function guardSpend(estUsd) {
@@ -81,12 +84,20 @@ async function freeGet(path) {
   return await loungeJson(res);
 }
 async function paidCall(path, opts, estUsd) {
+  // Guard and record back-to-back with no await between them, so concurrent
+  // paid calls can't all pass the guard before any of them counts.
   guardSpend(estUsd);
-  const pf = await getPayingFetch();
-  // Fail closed: once payment is possible we can't always prove a failed call
-  // didn't settle, so count the spend at attempt time. The ceiling can
-  // over-protect (block a budget early) but never leak past MAX_SPEND.
   recordSpend(estUsd);
+  let pf;
+  try {
+    pf = await getPayingFetch(estUsd);
+  } catch (err) {
+    spentUsd -= estUsd; // wallet setup failed: no request was sent, provably unpaid
+    throw err;
+  }
+  // Fail closed from here on: once a request is in flight we can't always
+  // prove a failed call didn't settle, so the spend stays counted. The ceiling
+  // can over-protect (block a budget early) but never leak past MAX_SPEND.
   const res = await pf(`${LOUNGE}${path}`, { ...opts, signal: AbortSignal.timeout(PAID_TIMEOUT_MS) });
   return await loungeJson(res);
 }
