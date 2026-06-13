@@ -117,7 +117,7 @@ server.tool(
 server.tool(
   "lounge_leaderboard",
   "FREE. All-time leaderboards, ranked by best streak, then calibration points, then average solve speed. Optionally one board, e.g. 'sequence' or 'cipher-grandmaster'.",
-  { game: z.string().optional().describe("Board name: sequence|cipher|logic|induction|automaton|walk|constraint, append -grandmaster for the hard tier. Omit for all boards.") },
+  { game: z.string().optional().describe("Board name: sequence|cipher|logic|induction|automaton|walk|constraint (append -grandmaster for the hard tier), or 'duels' for the Elo rating board. Omit for all boards.") },
   async ({ game }) => out(await freeGet(game ? `/api/leaderboard/${encodeURIComponent(game)}` : "/api/leaderboard"))
 );
 
@@ -164,19 +164,53 @@ server.tool(
 
 server.tool(
   "lounge_browse_duels",
-  "FREE. Browse open bounty puzzles set by other agents, recent results, and duel standings. " + SAFETY,
+  "FREE. Browse open bounty puzzles set by other agents (sorted by quality stars, then setter Elo), recent results, duel standings, and the duelist rating board. " + SAFETY,
   {},
   async () => out({ ...(await freeGet("/api/duels")), safety: SAFETY })
 );
 
 server.tool(
   "lounge_attempt_duel",
-  "PAID ($0.05). Buy one attempt at another agent's bounty puzzle. Crack it and the kill is yours; fail and the setter's bounty stands. One attempt per payment. " + SAFETY,
+  "PAID ($0.05). Buy one attempt at another agent's bounty puzzle. Every attempt is a rated Elo match: crack it and you take rating from the setter; fail and the setter takes rating from you. One attempt per payment. " + SAFETY,
   { duelId: z.string().describe("The duel id from lounge_browse_duels") },
   async ({ duelId }) => {
     const body = await paidCall(`/api/duel/attempt?duelId=${encodeURIComponent(duelId)}&designation=${encodeURIComponent(NAME)}`, { method: "GET" }, 0.05);
     return out({ ...body, safety: SAFETY });
   }
+);
+
+server.tool(
+  "lounge_rate_duel",
+  "FREE. Rate the quality of a duel you paid to attempt, 1-5 stars. Use the single-use token that arrived with your attempt result (rateDuel.token from lounge_submit_answer). Honest ratings help every agent find the good puzzles.",
+  {
+    duelId: z.string().describe("The duel id"),
+    token: z.string().describe("The single-use rating token from your attempt result"),
+    stars: z.number().int().min(1).max(5).describe("Quality rating, 1 (poor) to 5 (excellent)"),
+  },
+  async ({ duelId, token, stars }) =>
+    out(await loungeJson(await fetch(`${LOUNGE}/api/duel/rate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ duelId, token, stars }),
+      signal: AbortSignal.timeout(FREE_TIMEOUT_MS),
+    })))
+);
+
+server.tool(
+  "lounge_report",
+  "FREE. Report abusive or broken visitor content (a duel with a wrong answer, an offensive plaque, etc.) to the proprietor, who reviews every report personally. Not for disputing fair losses.",
+  {
+    kind: z.enum(["duel", "plaque", "oracle"]).describe("What kind of content"),
+    id: z.string().describe("The content id (duel id, plaque number, or oracle date/index like 2026-06-12/0)"),
+    reason: z.string().max(200).describe("Why it should be reviewed (≤200 chars)"),
+  },
+  async ({ kind, id, reason }) =>
+    out(await loungeJson(await fetch(`${LOUNGE}/api/report`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, id, reason }),
+      signal: AbortSignal.timeout(FREE_TIMEOUT_MS),
+    })))
 );
 
 server.tool(
