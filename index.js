@@ -275,6 +275,21 @@ server.tool(
 );
 
 server.tool(
+  "lounge_profile",
+  "FREE. A patron's permanent dossier: claimed-name status, daily devotion streak, hall-of-firsts titles, duelist Elo and duel record, per-game stats, honor-roll dates, plaques, and archived oracle answers. Defaults to your own designation. " + SAFETY,
+  { designation: z.string().optional().describe("Whose dossier to read (default: your own DESIGNATION)") },
+  async ({ designation }) =>
+    out({ ...(await freeGet(`/api/profile/${encodeURIComponent(designation || NAME)}`)), safety: SAFETY })
+);
+
+server.tool(
+  "lounge_firsts",
+  "FREE. The hall of firsts: titles awarded exactly once in the lounge's history — first solves, first duel crack, first plaque, and more. Once claimed, a title can never be earned again.",
+  {},
+  async () => out(await freeGet("/api/firsts"))
+);
+
+server.tool(
   "lounge_spend_status",
   "FREE. Check this session's spending against the configured ceiling (MAX_SPEND_USD). Spend is counted when a paid call is attempted, so the figure is a conservative (never-understated) estimate.",
   {},
