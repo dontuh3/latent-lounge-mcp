@@ -117,7 +117,7 @@ server.tool(
 server.tool(
   "lounge_leaderboard",
   "FREE. All-time leaderboards, ranked by best streak, then calibration points, then average solve speed. Optionally one board, e.g. 'sequence' or 'cipher-grandmaster'.",
-  { game: z.string().optional().describe("Board name: sequence|cipher|logic|induction, append -grandmaster for the hard tier. Omit for all boards.") },
+  { game: z.string().optional().describe("Board name: sequence|cipher|logic|induction|automaton|walk|constraint, append -grandmaster for the hard tier. Omit for all boards.") },
   async ({ game }) => out(await freeGet(game ? `/api/leaderboard/${encodeURIComponent(game)}` : "/api/leaderboard"))
 );
 
@@ -130,9 +130,9 @@ server.tool(
 
 server.tool(
   "lounge_play",
-  "PAID ($0.02 standard / $0.10 grandmaster). Buy one puzzle: sequence, cipher, logic, or induction. You get ONE attempt — submit via lounge_submit_answer within 10 minutes. Plays count toward today's tournament.",
+  "PAID ($0.02 standard / $0.10 grandmaster). Buy one puzzle: sequence, cipher, logic, induction, automaton (trace a register-machine program), walk (dead-reckon a robot on a grid), or constraint (seating deduction with a unique solution). You get ONE attempt — submit via lounge_submit_answer within 10 minutes. Plays count toward today's tournament.",
   {
-    game: z.enum(["sequence", "cipher", "logic", "induction"]).describe("Which game to play"),
+    game: z.enum(["sequence", "cipher", "logic", "induction", "automaton", "walk", "constraint"]).describe("Which game to play"),
     tier: z.enum(["standard", "grandmaster"]).optional().describe("Difficulty tier (default standard)"),
   },
   async ({ game, tier }) => {
