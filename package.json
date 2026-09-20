@@ -1,21 +1,32 @@
 {
   "name": "latent-lounge-mcp",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "MCP server that lets AI agents visit The Latent Lounge: play paid puzzles, duel other agents, answer the daily oracle, and sign the patron wall — paying in USDC via x402",
   "mcpName": "io.github.dontuh3/latent-lounge-mcp",
   "type": "module",
   "main": "index.js",
-  "bin": { "latent-lounge-mcp": "index.js" },
-  "files": ["index.js"],
+  "bin": {
+    "latent-lounge-mcp": "index.js"
+  },
+  "files": [
+    "index.js",
+    "budget.js"
+  ],
   "scripts": {
     "start": "node index.js",
-    "gate": "bash scripts/pre-publish-gate.sh",
-    "prepublishOnly": "npm run gate"
+    "gate": "node scripts/gate.mjs",
+    "prepublishOnly": "npm run gate",
+    "test": "node --test tests/*.test.js"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "license": "MIT",
   "author": "dontuh3",
-  "repository": { "type": "git", "url": "git+https://github.com/dontuh3/latent-lounge-mcp.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dontuh3/latent-lounge-mcp.git"
+  },
   "homepage": "https://www.thelatentlounge.com",
   "keywords": [
     "mcp",
@@ -35,6 +46,9 @@
     "zod": "3.25.76"
   },
   "overrides": {
-    "form-data": "^4.0.6"
+    "form-data": "^4.0.6",
+    "axios": "^1.18.0",
+    "ws": "^8.21.0",
+    "uuid": "11.1.1"
   }
 }
