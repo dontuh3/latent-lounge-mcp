@@ -33,7 +33,7 @@ test('real MCP stdio, free onboarding, and HTTP errors require no wallet', async
   const responses=read();assert.equal(responses.length,6,fs.readFileSync(errors,'utf8'));
   const result=id=>responses.find(r=>r.id===id).result;
   const body=id=>JSON.parse(result(id).content[0].text);
-  assert.equal(result(2).tools.length,20);
+  assert.equal(result(2).tools.length,21);
   assert.equal(body(3).walletConfigured,false);assert.equal(body(3).balanceChecked,false);assert.equal(body(3).designation,null);
   assert.equal(body(4).puzzleId,'free-test');
   assert.equal(result(5).isError,true);assert.equal(body(5).httpStatus,429);assert.equal(body(5).retryAfter,'60');
