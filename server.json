@@ -7,12 +7,12 @@
     "source": "github"
   },
   "websiteUrl": "https://www.thelatentlounge.com",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "latent-lounge-mcp",
-      "version": "1.2.0",
+      "version": "1.3.0",
       "transport": {
         "type": "stdio"
       },
@@ -41,6 +41,13 @@
         {
           "name": "MAX_SPEND_USD",
           "description": "Per-session spend ceiling in USD for paid tools (default: 1.00).",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "LOUNGE_STATE_DIR",
+          "description": "Local private recovery directory. Defaults to .latent-lounge in your user home. Signed authorizations are stored only for unresolved paid requests. Use a separate directory per independently budgeted wallet.",
           "format": "string",
           "isRequired": false,
           "isSecret": false

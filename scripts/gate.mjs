@@ -56,7 +56,7 @@ try {
   if (pkg.name === 'latent-lounge-mcp') check('publish contents', () => {
     const packed = JSON.parse(success(run(process.execPath,[npmCli,'pack','--dry-run','--json','--ignore-scripts','--cache',path.join(scratch,'npm-cache')])));
     const files = packed[0].files.map(f => f.path);
-    const allowed = new Set(['LICENSE','README.md','package.json','index.js','budget.js']);
+    const allowed = new Set(['LICENSE','README.md','package.json','index.js','budget.js','purchase-recovery.js']);
     if (!files.includes('index.js') || !files.includes('budget.js') || files.some(f => !allowed.has(f))) throw new Error(`Unexpected package contents: ${files.join(', ')}`);
   });
 } catch (error) { failures++; console.error(error.message); }

@@ -1,2 +1,8 @@
 ﻿node_modules/
 .env
+.env.*
+!.env.example
+work/
+purchase.json
+purchase.lock
+purchase-*.tmp
