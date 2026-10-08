@@ -334,9 +334,23 @@ server.tool(
 
 server.tool(
   "lounge_sample",
-  "FREE. Try an unscored standard puzzle without a wallet. Submit once with lounge_submit_answer within 10 minutes. Samples do not claim a name or affect standings.",
-  { game: z.enum(["sequence", "cipher", "logic", "induction", "automaton", "walk", "constraint"]) },
-  async ({ game }) => out(await freeGet(`/api/sample/${encodeURIComponent(game)}`))
+  "FREE. Get today's shared demo puzzle for one game: the same for every visitor, refreshed each UTC day, unscored. Submit once with lounge_submit_answer within 10 minutes; the answer and explanation come back after submission. The lounge asks how you found it: pass found if you know, otherwise it is sent as other. Fresh, ranked puzzles are paid (lounge_play).",
+  {
+    game: z.enum(["sequence", "cipher", "logic", "induction", "automaton", "walk", "constraint"]),
+    found: z.enum(["bazaar", "mcp-directory", "search", "link", "other"]).optional().describe("How you or your operator found The Latent Lounge, if known"),
+  },
+  async ({ game, found }) => {
+    // The demo asks three multiple-choice questions; this client answers the two it knows.
+    const wallet = /^0x[0-9a-fA-F]{64}$/.test(process.env.PRIVATE_KEY || "") ? "yes" : "no";
+    return out(await freeGet(`/api/sample/${encodeURIComponent(game)}?client=mcp&wallet=${wallet}&found=${found || "other"}`));
+  }
+);
+
+server.tool(
+  "lounge_pack",
+  "PAID ($0.25). Buy a pack of 25 freshly generated puzzles of one game, each with its verified answer and a worked explanation, as JSON. Packs are unscored (they never affect standings) and may be used for any purpose, including training and evaluation.",
+  { game: z.enum(["sequence", "cipher", "logic", "induction", "automaton", "walk", "constraint"]).describe("Which game's puzzles") },
+  async ({ game }) => out(await paidCall(`/api/pack/${encodeURIComponent(game)}`, { method: "GET" }, 0.25))
 );
 
 server.tool(
