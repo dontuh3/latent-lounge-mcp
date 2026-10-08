@@ -52,7 +52,7 @@ Core code is in `index.js`, `budget.js` and `purchase-recovery.js`. It reads its
 
 ## Lost payment responses
 
-Call `lounge_recover_purchase` with `action: "inspect"`, then `action: "retry"` if a purchase is pending. Retry reuses the exact original authorization; it does not sign or purchase again. It may settle that original authorized payment if it is still valid. New paid tools are blocked while a record remains unresolved. A restarted process reserves the pending amount against its session ceiling before retrying.
+Call `lounge_recover_purchase` with `action: "inspect"`, then `action: "retry"` if a purchase is pending. Retry reuses the exact original authorization and its private retrieval key; it does not sign or purchase again. The lounge honours a retry carrying that key for its full receipt-retention period (at least seven days); the key is generated per purchase and stored only in the private recovery file. It may settle that original authorized payment if it is still valid. New paid tools are blocked while a record remains unresolved. A restarted process reserves the pending amount against its session ceiling before retrying.
 
 Recovery state defaults to `.latent-lounge` in the user's home directory. Override with `LOUNGE_STATE_DIR`. Keep this directory private: an unresolved signed authorization is a bearer credential. Never upload it to a public issue. Use a separate directory for each independently budgeted wallet. A process lock prevents two clients sharing the directory from purchasing concurrently. A crash may require checking a stale lock if its owner PID was reused; never remove a lock belonging to a running client.
 

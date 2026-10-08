@@ -57,3 +57,13 @@ test('real x402 wrapper checkpoints its signed request and refuses an excessive 
  const tooSmall=wrapFetchWithPayment(mock,account,10000n);
  await assert.rejects(tooSmall(url),/exceeds maximum/);assert.equal(headers.length,2);
 });
+
+test('each purchase sends a private retrieval key, and recovery repeats exactly that key', async t => {
+ const dir=directory(t),calls=[],payment=signed(Math.floor(Date.now()/1000)+600);
+ const send=async(url,init)=>{calls.push(init.headers);if(calls.length===1)throw new Error('lost response');return new Response(JSON.stringify({paid:true}),{headers:{'X-PAYMENT-RESPONSE':'receipt'}});};
+ await assert.rejects(new PurchaseRecovery(dir,'https://example.com',send).trackedFetch('https://example.com/api/pack/walk',{method:'GET',headers:{'X-PAYMENT':payment}},0.25),/lost/);
+ await new PurchaseRecovery(dir,'https://example.com',send).retry(()=>{});
+ const key=calls[0]['X-Lounge-Retrieval-Key'];
+ assert.match(key,/^[A-Za-z0-9_-]{32}$/); assert.equal(calls[1]['X-Lounge-Retrieval-Key'],key);
+ assert.ok(!JSON.stringify(new PurchaseRecovery(dir,'https://example.com',send).inspect()).includes(key));
+});
