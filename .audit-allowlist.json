@@ -8,8 +8,8 @@
         "0.2.2"
       ],
       "severity": "moderate",
-      "reason": "Only present via query-string in WalletConnect browser connectors brought by x402/wagmi. MCP uses x402-fetch with a local viem account; an ESM resolution trace of these imports and wrapper initialization did not load wagmi, WalletConnect, query-string or the decoder. Patched 0.5.0 is ESM-only and incompatible with its CommonJS consumer. Re-review if imports or wallet integration change.",
-      "reviewBy": "2026-10-20"
+      "reason": "Accepted by the owner (dontuh3) on 2026-10-08 as a dated bridge, not a fix. decode-uri-component 0.2.2 arrives only through x402/paywall's browser-wallet tree (x402 -> wagmi -> WalletConnect -> query-string); this MCP signs with a local viem account and nothing here or in x402-fetch imports x402/paywall. On 2026-10-08 (commit 5dbea77) module tracing of a real paid tool call (initialization, signing, payment) loaded none of that tree, from both the repository lockfile and a consumer install of the packed tarball; a positive control did. tests/dependency-guard.test.js now fails if it ever loads. Patched 0.5.0 is ESM-only and incompatible with its CommonJS consumer, so no override. Remediation: migrate to the modular @x402 v2 packages, which do not depend on wagmi. Re-review on any wallet, import or dependency change, and by the reviewBy date.",
+      "reviewBy": "2026-12-01"
     }
   ]
 }

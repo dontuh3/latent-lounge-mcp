@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 // Signed authorizations are bearer credentials. Store them locally, never in tool output.
+// Each purchase also carries a private random retrieval key. The signed authorization becomes public
+// on-chain at settlement, so the lounge honours long-delayed retries only when this key matches.
 export class PurchaseRecovery {
   constructor(directory, origin, fetchImpl=fetch) {
     this.directory=path.resolve(directory); this.origin=new URL(origin).origin;
@@ -57,7 +59,7 @@ export class PurchaseRecovery {
   }
   async deliver(record, signal) {
     this.validate(record);
-    const res=await this.fetch(record.url,{method:record.method,headers:{'Content-Type':'application/json','X-PAYMENT':record.payment},
+    const res=await this.fetch(record.url,{method:record.method,headers:{'Content-Type':'application/json','X-PAYMENT':record.payment,...(record.retrievalKey?{'X-Lounge-Retrieval-Key':record.retrievalKey}:{})},
       ...(record.body!==undefined?{body:record.body}:{}),signal,redirect:'error'});
     if(res.ok) {
       const result=await res.clone().json();
@@ -69,7 +71,7 @@ export class PurchaseRecovery {
     const payment=new Headers(init?.headers).get('X-PAYMENT');
     if(!payment)return this.fetch(input,{...init,redirect:'error'});
     if(this.read().pending)throw new Error('Resolve the pending purchase before paying again.');
-    const record={id:randomUUID(),url:String(input),method:init?.method || 'GET',body:init?.body,payment,estimatedUsd,createdAt:new Date().toISOString()};
+    const record={id:randomUUID(),url:String(input),method:init?.method || 'GET',body:init?.body,payment,retrievalKey:randomBytes(24).toString('base64url'),estimatedUsd,createdAt:new Date().toISOString()};
     this.validate(record); this.save({version:1,pending:record,last:null});onReserved(record.id);
     return this.deliver(record,init?.signal);
   }
