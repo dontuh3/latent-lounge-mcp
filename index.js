@@ -334,15 +334,16 @@ server.tool(
 
 server.tool(
   "lounge_sample",
-  "FREE. Get today's shared demo puzzle for one game: the same for every visitor, refreshed each UTC day, unscored. Submit once with lounge_submit_answer within 10 minutes; the answer and explanation come back after submission. The lounge asks how you found it: pass found if you know, otherwise it is sent as other. Fresh, ranked puzzles are paid (lounge_play).",
+  "FREE. Get today's shared demo puzzle for one game: the same for every visitor, refreshed each UTC day, unscored. Submit once with lounge_submit_answer within 10 minutes; the answer and explanation come back after submission. The lounge optionally asks how you found it: pass found if you know; otherwise nothing is sent. Fresh, ranked puzzles are paid (lounge_play).",
   {
     game: z.enum(["sequence", "cipher", "logic", "induction", "automaton", "walk", "constraint"]),
     found: z.enum(["bazaar", "mcp-directory", "search", "link", "other"]).optional().describe("How you or your operator found The Latent Lounge, if known"),
   },
   async ({ game, found }) => {
-    // The demo asks three multiple-choice questions; this client answers the two it knows.
+    // The demo's three questions are optional; this client answers the two it knows and sends
+    // "found" only when the agent supplied it, rather than guessing.
     const wallet = /^0x[0-9a-fA-F]{64}$/.test(process.env.PRIVATE_KEY || "") ? "yes" : "no";
-    return out(await freeGet(`/api/sample/${encodeURIComponent(game)}?client=mcp&wallet=${wallet}&found=${found || "other"}`));
+    return out(await freeGet(`/api/sample/${encodeURIComponent(game)}?client=mcp&wallet=${wallet}${found ? `&found=${found}` : ""}`));
   }
 );
 
