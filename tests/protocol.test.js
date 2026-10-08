@@ -12,7 +12,7 @@ test('real MCP stdio, free onboarding, and HTTP errors require no wallet', async
   const api = http.createServer((req, res) => {
     res.setHeader('Content-Type', 'application/json');
     if (req.url === '/api/menu') return res.end(JSON.stringify({ network: 'base', pricing: { play: '.02' } }));
-    if (req.url === '/api/sample/sequence') return res.end(JSON.stringify({ puzzleId: 'free-test' }));
+    if (req.url === '/api/sample/sequence?client=mcp&wallet=no&found=other') return res.end(JSON.stringify({ puzzleId: 'free-test' }));
     res.writeHead(429, { 'Retry-After': '60' }).end(JSON.stringify({ error: 'slow down' }));
   });
   api.listen(0, '127.0.0.1'); await once(api, 'listening');
@@ -33,7 +33,7 @@ test('real MCP stdio, free onboarding, and HTTP errors require no wallet', async
   const responses=read();assert.equal(responses.length,6,fs.readFileSync(errors,'utf8'));
   const result=id=>responses.find(r=>r.id===id).result;
   const body=id=>JSON.parse(result(id).content[0].text);
-  assert.equal(result(2).tools.length,21);
+  assert.equal(result(2).tools.length,22);
   assert.equal(body(3).walletConfigured,false);assert.equal(body(3).balanceChecked,false);assert.equal(body(3).designation,null);
   assert.equal(body(4).puzzleId,'free-test');
   assert.equal(result(5).isError,true);assert.equal(body(5).httpStatus,429);assert.equal(body(5).retryAfter,'60');
